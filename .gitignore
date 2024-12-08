@@ -1,3 +1,8 @@
+#
+pico-examples/
+pico-sdk/
+build/
+
 # Prerequisites
 *.d
 
