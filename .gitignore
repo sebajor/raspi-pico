@@ -1,7 +1,9 @@
-#
+youtube_ex/
 pico-examples/
 pico-sdk/
 build/
+raw_data/
+__pycache__/
 
 # Prerequisites
 *.d
