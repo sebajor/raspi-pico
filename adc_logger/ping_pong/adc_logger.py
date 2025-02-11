@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time, os
 import datetime
+import argparse
+import logging
 
 
 ###
@@ -19,6 +21,14 @@ parse_folder = 'csv_data'
 
 ##BTW with the 2kHz sampling rate each day we generate
 ##  2000*4*60*60*24/2**20 = 659MB of data!!
+
+parser = argparse.ArgumentParser(
+    description="Get data from the raspberry pico ADCs")
+
+parser.add_argument("-t", "--time", dest="rec_time", default=24*60, type=float,
+                help="time to record in minutes, default is 24rs")
+
+
 
 def quick_parse_data(raw_filename, first_samples=2*(1024*4+4)):
     """
@@ -52,6 +62,9 @@ def quick_parse_data(raw_filename, first_samples=2*(1024*4+4)):
 
 
 if __name__ == '__main__':
+    args = parser.parse_args()
+    rec_time = args.rec_time*60
+    print("rec time %f secs"%rec_time)
     ###The idea is to run the script at the begining of each day with a cronjob
     samples = adc_samples*4+4   ##We have 4ADC data (1 is to check correctness)
                                 ##and the word 0xaabbccdd is at the begining of 
@@ -60,27 +73,18 @@ if __name__ == '__main__':
     ser = serial.Serial(tty, baudrate)
     ##to start the transmission from the pico you have to write whatever
     os.makedirs(raw_folder, exist_ok=True)
-    start_date = datetime.datetime.utcnow()
+    start_stamp = time.time()
+    start_date = datetime.datetime.fromtimestamp(start_stamp)
+    end_stamp = start_stamp+rec_time
     raw_filename = os.path.join(raw_folder, start_date.strftime("%m-%d-%Y_%H:%M:%S"))
     f = open(raw_filename, 'wb')
     ser.write('a'.encode())
     while(1):
-        tmp =  datetime.datetime.utcnow()-start_date
-        if(tmp.days !=0):
+        curr_time = time.time()
+        if(curr_time>end_stamp):
             print('out of the while loop')
-            print(tmp.days)
             break
         raw_data = ser.read(samples)
         f.write(raw_data)
     ser.close()
     f.close()
-
-    ##now optionally parse the data in a csv way 
-    if(parse_data):
-        os.makedirs(parse_folder, exist_ok=True)
-        fr = open(raw_filename, 'rb')
-        raw = fr.read(size)
-
-        
-    
-
